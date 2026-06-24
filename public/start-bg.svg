@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Voxel night maze background">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07112b"/>
+      <stop offset="0.58" stop-color="#132c55"/>
+      <stop offset="1" stop-color="#1c2d3f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="64%" cy="65%" r="40%">
+      <stop offset="0" stop-color="#ff8a1a" stop-opacity=".62"/>
+      <stop offset=".48" stop-color="#ff8a1a" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#ff8a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fog" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9d1ff" stop-opacity="0"/>
+      <stop offset=".45" stop-color="#d9e6ff" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#b9d1ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <g fill="#d9e8ff">
+    <rect x="139" y="88" width="5" height="5"/><rect x="302" y="46" width="3" height="3"/>
+    <rect x="515" y="114" width="4" height="4"/><rect x="780" y="67" width="3" height="3"/>
+    <rect x="1008" y="132" width="5" height="5"/><rect x="1240" y="74" width="4" height="4"/>
+    <rect x="1452" y="166" width="3" height="3"/><rect x="1500" y="54" width="5" height="5"/>
+    <rect x="1110" y="236" width="3" height="3"/><rect x="630" y="220" width="4" height="4"/>
+  </g>
+  <g>
+    <rect x="1190" y="88" width="88" height="88" fill="#dce8ff"/>
+    <rect x="1172" y="76" width="58" height="104" fill="#07112b"/>
+  </g>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g transform="translate(0 420)">
+    <polygon points="0,480 0,310 500,130 500,480" fill="#26333a"/>
+    <polygon points="1600,480 1600,280 1040,120 1040,480" fill="#202b32"/>
+    <polygon points="500,480 500,130 610,100 610,480" fill="#526061"/>
+    <polygon points="1040,480 1040,120 920,96 920,480" fill="#455052"/>
+    <polygon points="610,480 610,100 920,96 920,480" fill="#2a393c"/>
+    <g fill="#6f7675" opacity=".95">
+      <rect x="48" y="318" width="120" height="34"/><rect x="202" y="264" width="112" height="30"/>
+      <rect x="376" y="190" width="96" height="28"/><rect x="1080" y="180" width="108" height="28"/>
+      <rect x="1240" y="236" width="126" height="34"/><rect x="1418" y="302" width="122" height="36"/>
+    </g>
+    <g fill="#7b8280" opacity=".8">
+      <rect x="538" y="178" width="54" height="18"/><rect x="642" y="146" width="48" height="16"/>
+      <rect x="838" y="146" width="48" height="16"/><rect x="942" y="172" width="52" height="18"/>
+    </g>
+    <polygon points="0,480 610,300 920,300 1600,480" fill="#314b32"/>
+    <polygon points="610,300 760,250 920,300" fill="#3f6f38"/>
+    <g fill="#ff8a1a">
+      <polygon points="735,278 764,236 792,278 764,310"/><polygon points="1010,356 1034,320 1064,356 1034,386"/>
+      <polygon points="520,386 542,350 568,386 542,414"/>
+    </g>
+    <g fill="#ffd36d" opacity=".75">
+      <rect x="759" y="254" width="10" height="18"/><rect x="1028" y="338" width="10" height="14"/>
+      <rect x="538" y="370" width="8" height="14"/>
+    </g>
+    <g opacity=".72">
+      <rect x="290" y="288" width="18" height="92" fill="#17131b"/>
+      <rect x="308" y="296" width="78" height="48" fill="#281924"/>
+      <rect x="1290" y="260" width="18" height="116" fill="#17131b"/>
+      <rect x="1216" y="272" width="74" height="58" fill="#2b1721"/>
+    </g>
+    <g fill="#d7ccb0" opacity=".9">
+      <rect x="420" y="428" width="64" height="14"/><rect x="448" y="404" width="14" height="62"/>
+      <rect x="1164" y="416" width="76" height="16"/><rect x="1195" y="392" width="16" height="66"/>
+    </g>
+  </g>
+  <rect y="610" width="1600" height="160" fill="url(#fog)" opacity=".75"/>
+  <rect width="1600" height="900" fill="#000" opacity=".16"/>
+</svg>
