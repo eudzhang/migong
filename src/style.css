@@ -179,6 +179,33 @@ body {
   mix-blend-mode: multiply;
 }
 
+.night-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.18) 38%, rgba(0, 0, 0, 0.74) 100%),
+    linear-gradient(180deg, rgba(0, 8, 22, 0.56), rgba(0, 0, 0, 0.25));
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+.night-overlay span {
+  position: absolute;
+  left: 50%;
+  top: 82px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(102, 184, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(2, 7, 14, 0.55);
+  color: #d8ecff;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  text-shadow: 0 0 14px rgba(58, 151, 255, 0.75);
+}
+
 .crosshair {
   position: absolute;
   left: 50%;
@@ -187,6 +214,7 @@ body {
   height: 16px;
   transform: translate(-50%, -50%);
   opacity: 0.62;
+  z-index: 4;
 }
 
 .crosshair::before,
@@ -335,6 +363,60 @@ body {
     5px -6px 0 -2px #8e1830,
     5px 6px 0 -2px #8e1830;
   transform: rotate(-7deg);
+}
+
+.torch-icon::before {
+  position: absolute;
+  left: 27px;
+  top: 18px;
+  width: 11px;
+  height: 38px;
+  content: "";
+  background: #6f3f19;
+  box-shadow:
+    -5px 5px 0 #3a2110,
+    4px 8px 0 #9a6730;
+  transform: rotate(10deg);
+}
+
+.torch-icon::after {
+  position: absolute;
+  left: 20px;
+  top: 3px;
+  width: 24px;
+  height: 24px;
+  content: "";
+  background: #ff8a1f;
+  box-shadow:
+    0 0 18px rgba(255, 110, 18, 0.95),
+    8px 6px 0 -4px #ffe08a,
+    -6px 8px 0 -5px #d93816;
+  transform: rotate(45deg);
+}
+
+.cloak-icon::before {
+  position: absolute;
+  left: 12px;
+  top: 9px;
+  width: 38px;
+  height: 48px;
+  content: "";
+  background: linear-gradient(135deg, #24344c, #111923 62%, #51317a);
+  clip-path: polygon(50% 0, 88% 20%, 100% 100%, 0 100%, 12% 20%);
+  box-shadow:
+    inset 0 0 0 3px rgba(162, 217, 255, 0.24),
+    0 0 18px rgba(83, 120, 255, 0.36);
+}
+
+.cloak-icon::after {
+  position: absolute;
+  left: 27px;
+  top: 13px;
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: #9fe8ff;
+  box-shadow: 0 0 10px rgba(159, 232, 255, 0.9);
 }
 
 .shop-item span {
@@ -662,6 +744,7 @@ body {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  z-index: 4;
 }
 
 .hud-panel {
@@ -708,6 +791,72 @@ body {
   font-size: 13px;
   line-height: 1.35;
   backdrop-filter: blur(10px);
+  z-index: 4;
+}
+
+.skill-bar {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 4;
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.skill-button {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255, 220, 124, 0.42);
+  border-radius: 8px;
+  background: rgba(8, 12, 18, 0.66);
+  color: #fff4c7;
+  cursor: pointer;
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.skill-button:disabled {
+  cursor: default;
+}
+
+.skill-button.locked,
+.skill-button:disabled:not(.ready) {
+  opacity: 0.58;
+  filter: grayscale(0.45);
+}
+
+.skill-button.ready {
+  border-color: rgba(255, 227, 127, 0.9);
+  box-shadow:
+    0 0 24px rgba(255, 180, 51, 0.42),
+    0 14px 40px rgba(0, 0, 0, 0.38),
+    inset 0 0 18px rgba(255, 181, 51, 0.2);
+}
+
+.skill-button.active {
+  border-color: rgba(122, 221, 255, 0.82);
+  color: #d8fbff;
+  box-shadow:
+    0 0 28px rgba(90, 202, 255, 0.48),
+    inset 0 0 18px rgba(90, 202, 255, 0.18);
+}
+
+.skill-icon {
+  display: block;
+  font-size: 32px;
+  line-height: 30px;
+  text-shadow: 0 0 16px rgba(255, 206, 80, 0.86);
+}
+
+.skill-button small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .game-message {
@@ -765,6 +914,25 @@ body {
     right: 10px;
     bottom: 10px;
     font-size: 12px;
+  }
+
+  .skill-bar {
+    right: 10px;
+    bottom: 56px;
+  }
+
+  .skill-button {
+    width: 58px;
+    height: 58px;
+  }
+
+  .skill-icon {
+    font-size: 25px;
+    line-height: 24px;
+  }
+
+  .skill-button small {
+    font-size: 10px;
   }
 
   .start-screen {

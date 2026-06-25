@@ -155,6 +155,10 @@ let dynamicOpenCells = new Set<string>();
 
 type Cell = { row: number; col: number };
 
+function isFirstLevel(): boolean {
+  return currentLevel.id === "moon-maze";
+}
+
 function isForestLevel(): boolean {
   return currentLevel.id === "mist-forest";
 }
@@ -406,6 +410,9 @@ function makeHud(levelIndex: number): HTMLDivElement {
       </div>
       <div class="crosshair"></div>
       <div class="vignette"></div>
+      <div id="night-overlay" class="night-overlay hidden">
+        <span>黑夜降临</span>
+      </div>
       <div id="held-item" class="held-item hidden">
         <img id="held-item-image" src="" alt="" />
       </div>
@@ -416,6 +423,12 @@ function makeHud(levelIndex: number): HTMLDivElement {
         <strong id="exit-guide-text">跟随指引前进</strong>
       </div>
       <div class="hud-tip">WASD移动，鼠标转向。左键/F/空格攻击，鼠标滚轮切换武器，E 打开商城，Esc/P 暂停。</div>
+      <div id="skill-bar" class="skill-bar hidden">
+        <button id="skill-truesight" class="skill-button locked" type="button" aria-label="透视眼">
+          <span class="skill-icon">◎</span>
+          <small id="skill-truesight-timer">未获得</small>
+        </button>
+      </div>
       <div id="damage-flash" class="damage-flash"></div>
       <div id="game-message" class="game-message hidden"></div>
     </div>
@@ -438,6 +451,16 @@ function makeHud(levelIndex: number): HTMLDivElement {
         <button id="buy-bow" class="shop-item" type="button">
           <span class="shop-voxel-icon bow-icon" aria-hidden="true"><i></i></span>
           <span><b>弓箭</b><small>${levelIndex === 0 ? "第二关开放，远距离精准攻击" : `消耗 ${GAME_BALANCE.shop.bowCost} 橙晶，远距离精准攻击`}</small></span>
+          <em>兑换</em>
+        </button>
+        <button id="buy-torch" class="shop-item" type="button">
+          <span class="shop-voxel-icon torch-icon" aria-hidden="true"><i></i></span>
+          <span><b>火把</b><small>${levelIndex === 0 ? "第二关开放，黑夜中照亮小范围" : `消耗 ${GAME_BALANCE.shop.torchCost} 橙晶，黑夜中照亮小范围`}</small></span>
+          <em>兑换</em>
+        </button>
+        <button id="buy-cloak" class="shop-item" type="button">
+          <span class="shop-voxel-icon cloak-icon" aria-hidden="true"><i></i></span>
+          <span><b>隐身衣</b><small>${levelIndex === 0 ? "第二关开放，获得 45 秒隐身" : `消耗 ${GAME_BALANCE.shop.cloakCost} 橙晶，获得 45 秒隐身`}</small></span>
           <em>兑换</em>
         </button>
         <button id="close-shop" class="secondary-button" type="button">关闭</button>
@@ -1243,11 +1266,13 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     bark: barkMat,
     leaf: canopyMat
   };
+  let elapsed = 0;
+  let nightMode = false;
   let enemyPressureBonus = 0;
 
   function levelEnemyMax(): number {
     if (isForestLevel()) return GAME_BALANCE.enemies.maxAlive + 7 + enemyPressureBonus;
-    if (isDesertLevel()) return GAME_BALANCE.enemies.maxAlive + 6;
+    if (isDesertLevel()) return GAME_BALANCE.enemies.maxAlive + 10;
     return GAME_BALANCE.enemies.maxAlive;
   }
 
@@ -1261,10 +1286,16 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     const kinds = isForestLevel()
       ? [...GAME_BALANCE.enemies.initialKinds, "蝙蝠群", "蝙蝠群", "森林守卫"] as readonly NpcKind[]
       : isDesertLevel()
-        ? ["骷髅兵", "骷髅兵", "毒蝎", "毒蝎", "老婆婆"] as readonly NpcKind[]
+        ? ["骷髅兵", "骷髅兵", "毒蝎", "毒蝎", "老婆婆", "蝙蝠群", "鬼新娘"] as readonly NpcKind[]
         : GAME_BALANCE.enemies.initialKinds as readonly NpcKind[];
     const chosen = kind ?? kinds[Math.floor(Math.random() * kinds.length)];
-    enemies.push(createNpc(scene, chosen, worldFromCell(pickSpawnCell()).add(new Vector3(0, 0.02, 0)), npcMaterials));
+    const enemy = createNpc(scene, chosen, worldFromCell(pickSpawnCell()).add(new Vector3(0, 0.02, 0)), npcMaterials);
+    if (nightMode && chosen !== "森林守卫" && chosen !== "沙漠狼人") {
+      enemy.health = Math.max(enemy.health, 3);
+      enemy.speed *= 1.22;
+      enemy.rageUntil = elapsed + 4;
+    }
+    enemies.push(enemy);
   }
 
   if (isDesertLevel()) {
@@ -1273,6 +1304,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     spawnNpc("毒蝎");
     spawnNpc("毒蝎");
     spawnNpc("骷髅兵");
+    spawnNpc("蝙蝠群");
+    spawnNpc("沙漠狼人");
   } else {
     GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
   }
@@ -1301,6 +1334,10 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   const buyScytheLabel = buyScytheButton?.querySelector<HTMLElement>("em");
   const buyBowButton = hud.querySelector<HTMLButtonElement>("#buy-bow");
   const buyBowLabel = buyBowButton?.querySelector<HTMLElement>("em");
+  const buyTorchButton = hud.querySelector<HTMLButtonElement>("#buy-torch");
+  const buyTorchLabel = buyTorchButton?.querySelector<HTMLElement>("em");
+  const buyCloakButton = hud.querySelector<HTMLButtonElement>("#buy-cloak");
+  const buyCloakLabel = buyCloakButton?.querySelector<HTMLElement>("em");
   const closeShopButton = hud.querySelector<HTMLButtonElement>("#close-shop");
   const resumeButton = hud.querySelector<HTMLButtonElement>("#resume-button");
   const restartButton = hud.querySelector<HTMLButtonElement>("#restart-button");
@@ -1317,6 +1354,10 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   const threatReadout = hud.querySelector<HTMLElement>("#threat-readout");
   const exitGuide = hud.querySelector<HTMLDivElement>("#exit-guide");
   const exitGuideText = hud.querySelector<HTMLElement>("#exit-guide-text");
+  const nightOverlay = hud.querySelector<HTMLDivElement>("#night-overlay");
+  const skillBar = hud.querySelector<HTMLDivElement>("#skill-bar");
+  const trueSightButton = hud.querySelector<HTMLButtonElement>("#skill-truesight");
+  const trueSightTimer = hud.querySelector<HTMLElement>("#skill-truesight-timer");
   const message = hud.querySelector<HTMLDivElement>("#game-message");
   const damageFlash = hud.querySelector<HTMLDivElement>("#damage-flash");
 
@@ -1324,6 +1365,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let crystalCount = 0;
   let hasScythe = false;
   let hasBow = false;
+  let hasTorch = false;
+  let hasTrueSight = false;
+  let wallVisionActive = false;
   let shields = 0;
   let lives: number = GAME_BALANCE.player.lives;
   let invulnerable = 0;
@@ -1331,7 +1375,6 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let gameStarted = false;
   let shopOpen = false;
   let paused = false;
-  let elapsed = 0;
   let spawnTimer: number = isForestLevel() ? 8 : isDesertLevel() ? 10 : GAME_BALANCE.enemies.initialSpawnSeconds;
   let attackCooldown = 0;
   let selectedWeapon: "scythe" | "bow" | null = null;
@@ -1344,6 +1387,11 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let scytheSwingUntil = 0;
   let bowDrawUntil = 0;
   let safeUntil = 0;
+  let nextNightAt = isFirstLevel() ? Number.POSITIVE_INFINITY : 20 + Math.random() * 16;
+  let nightUntil = 0;
+  let invisibilityUntil = 0;
+  let trueSightUntil = 0;
+  let trueSightCooldownUntil = 0;
 
   function showMessage(text: string, win = false): void {
     if (!message) return;
@@ -1379,6 +1427,47 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     refreshLevelButtons();
     levelMenu?.classList.remove("hidden");
     showCombatToast("开发者模式：全部关卡已解锁", "good");
+  }
+
+  function setWallVision(active: boolean): void {
+    if (wallVisionActive === active) return;
+    wallVisionActive = active;
+    forestWallRoots.forEach((wall) => {
+      wall.getChildMeshes().forEach((mesh) => {
+        mesh.visibility = active ? 0.48 : 1;
+      });
+    });
+  }
+
+  function beginNightMode(): void {
+    if (isFirstLevel() || nightMode) return;
+    nightMode = true;
+    nightUntil = elapsed + 16 + Math.random() * 7;
+    enemies.forEach((enemy) => {
+      if (enemy.kind === "森林守卫" || enemy.kind === "沙漠狼人") return;
+      enemy.health = Math.max(enemy.health, 3);
+      enemy.speed *= 1.12;
+      enemy.rageUntil = elapsed + 5;
+    });
+    spawnTimer = Math.min(spawnTimer, 0.8);
+    showCombatToast("黑夜降临，敌人强化", "danger");
+  }
+
+  function endNightMode(): void {
+    if (!nightMode) return;
+    nightMode = false;
+    nightUntil = 0;
+    nextNightAt = elapsed + 28 + Math.random() * 28;
+    showCombatToast("黑夜退去", "good");
+  }
+
+  function useTrueSight(): void {
+    if (!hasTrueSight || finished || paused || shopOpen || elapsed < trueSightUntil || elapsed < trueSightCooldownUntil) return;
+    trueSightUntil = elapsed + 10;
+    trueSightCooldownUntil = elapsed + 120;
+    setWallVision(true);
+    showCombatToast("透视眼开启", "good");
+    updateHud();
   }
 
   function directionToExit(): string {
@@ -1611,6 +1700,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   }
 
   function damagePlayer(source: NpcKind): void {
+    if (elapsed < invisibilityUntil) return;
     if (finished || invulnerable > 0 || elapsed < safeUntil) return;
     if (shields > 0) {
       shields -= 1;
@@ -1642,18 +1732,36 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     if (buyShieldButton) buyShieldButton.disabled = crystalCount < GAME_BALANCE.shop.shieldCost;
     if (buyScytheButton) buyScytheButton.disabled = hasScythe || crystalCount < GAME_BALANCE.shop.scytheCost;
     if (buyBowButton) buyBowButton.disabled = currentLevelIndex === 0 || hasBow || crystalCount < GAME_BALANCE.shop.bowCost;
+    if (buyTorchButton) buyTorchButton.disabled = isFirstLevel() || hasTorch || crystalCount < GAME_BALANCE.shop.torchCost;
+    if (buyCloakButton) buyCloakButton.disabled = isFirstLevel() || crystalCount < GAME_BALANCE.shop.cloakCost;
     if (buyScytheLabel) buyScytheLabel.textContent = hasScythe ? "已解锁" : "兑换";
     if (buyBowLabel) buyBowLabel.textContent = hasBow ? "已解锁" : "兑换";
+    if (buyTorchLabel) buyTorchLabel.textContent = hasTorch ? "已解锁" : "兑换";
+    if (buyCloakLabel) buyCloakLabel.textContent = elapsed < invisibilityUntil ? `${Math.ceil(invisibilityUntil - elapsed)}秒` : "兑换";
     if (itemsReadout) {
       const parts = [];
       if (shields > 0) parts.push(`盾 ${shields}`);
       if (hasScythe) parts.push(selectedWeapon === "scythe" ? "镰刀*" : "镰刀");
       if (hasBow) parts.push(selectedWeapon === "bow" ? "弓*" : "弓");
+      if (hasTorch) parts.push("火把");
+      if (elapsed < invisibilityUntil) parts.push(`隐身 ${Math.ceil(invisibilityUntil - elapsed)}s`);
+      if (hasTrueSight) parts.push("透视眼");
       itemsReadout.textContent = parts.length > 0 ? parts.join(" / ") : "无";
     }
     if (threatReadout) threatReadout.textContent = alert ? `${alert}靠近` : enemies.length > 0 ? `${enemies.length} 个目标` : "安静";
     if (statusReadout) {
-      statusReadout.textContent = paused ? "已暂停" : shopOpen ? "水晶商城" : collected === keys.length ? "出口已开启" : "寻找符文";
+      statusReadout.textContent = paused ? "已暂停" : shopOpen ? "水晶商城" : elapsed < invisibilityUntil ? "隐身中" : nightMode ? "黑夜模式" : collected === keys.length ? "出口已开启" : "寻找符文";
+    }
+    nightOverlay?.classList.toggle("hidden", !nightMode);
+    skillBar?.classList.toggle("hidden", !hasTrueSight);
+    if (trueSightButton && trueSightTimer) {
+      const active = elapsed < trueSightUntil;
+      const cooldown = Math.max(0, trueSightCooldownUntil - elapsed);
+      trueSightButton.disabled = !hasTrueSight || active || cooldown > 0 || finished || paused || shopOpen;
+      trueSightButton.classList.toggle("locked", !hasTrueSight);
+      trueSightButton.classList.toggle("ready", hasTrueSight && !active && cooldown <= 0);
+      trueSightButton.classList.toggle("active", active);
+      trueSightTimer.textContent = !hasTrueSight ? "未获得" : active ? `${Math.ceil(trueSightUntil - elapsed)}秒` : cooldown > 0 ? `${Math.ceil(cooldown)}秒` : "就绪";
     }
     updateExitGuide();
     updateHeldItem();
@@ -1670,7 +1778,14 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       return false;
     }
     const [defeated] = enemies.splice(targetIndex, 1);
-    if (defeated) disposeEnemy(defeated);
+    if (defeated) {
+      if (defeated.kind === "沙漠狼人" && !hasTrueSight) {
+        hasTrueSight = true;
+        trueSightCooldownUntil = elapsed;
+        showCombatToast("获得透视眼", "good");
+      }
+      disposeEnemy(defeated);
+    }
     return true;
   }
 
@@ -1756,11 +1871,22 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     updateHud();
   }
 
-  function buyItem(type: "shield" | "scythe" | "bow"): void {
-    const cost = type === "shield" ? GAME_BALANCE.shop.shieldCost : type === "scythe" ? GAME_BALANCE.shop.scytheCost : GAME_BALANCE.shop.bowCost;
+  function buyItem(type: "shield" | "scythe" | "bow" | "torch" | "cloak"): void {
+    const cost =
+      type === "shield"
+        ? GAME_BALANCE.shop.shieldCost
+        : type === "scythe"
+          ? GAME_BALANCE.shop.scytheCost
+          : type === "bow"
+            ? GAME_BALANCE.shop.bowCost
+            : type === "torch"
+              ? GAME_BALANCE.shop.torchCost
+              : GAME_BALANCE.shop.cloakCost;
     if (!shopOpen || crystalCount < cost) return;
     if (type === "scythe" && hasScythe) return;
     if (type === "bow" && hasBow) return;
+    if (type === "torch" && (isFirstLevel() || hasTorch)) return;
+    if (type === "cloak" && isFirstLevel()) return;
     crystalCount -= cost;
     if (type === "shield") {
       shields += 1;
@@ -1771,11 +1897,17 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       selectedWeapon = "scythe";
       playHeldAction("scythe", "attack", "hit");
       showCombatToast("镰刀已装备", "good");
-    } else {
+    } else if (type === "bow") {
       hasBow = true;
       selectedWeapon = "bow";
       playHeldAction("bow", "attack", "hit");
       showCombatToast("弓箭已装备", "good");
+    } else if (type === "torch") {
+      hasTorch = true;
+      showCombatToast("火把已点燃", "good");
+    } else {
+      invisibilityUntil = elapsed + 45;
+      showCombatToast("隐身衣启动 45 秒", "good");
     }
     updateHud();
   }
@@ -1800,6 +1932,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       spawnNpc("毒蝎");
       spawnNpc("毒蝎");
       spawnNpc("骷髅兵");
+      spawnNpc("蝙蝠群");
+      spawnNpc("沙漠狼人");
     } else {
       GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
     }
@@ -1842,6 +1976,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     crystalCount = 0;
     hasScythe = false;
     hasBow = false;
+    hasTorch = false;
+    hasTrueSight = false;
     selectedWeapon = null;
     enemyPressureBonus = 0;
     shields = 0;
@@ -1857,6 +1993,13 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     scytheSwingUntil = 0;
     bowDrawUntil = 0;
     safeUntil = elapsed + 5;
+    nightMode = false;
+    nextNightAt = isFirstLevel() ? Number.POSITIVE_INFINITY : elapsed + 20 + Math.random() * 16;
+    nightUntil = 0;
+    invisibilityUntil = 0;
+    trueSightUntil = 0;
+    trueSightCooldownUntil = 0;
+    setWallVision(false);
     window.clearTimeout(combatToastTimer);
     window.clearTimeout(slashEffectTimer);
     shopOverlay?.classList.add("hidden");
@@ -1922,6 +2065,10 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       event.preventDefault();
       useAttack();
     }
+    if (event.code === "KeyT" && gameStarted && !finished && !paused && !shopOpen) {
+      event.preventDefault();
+      useTrueSight();
+    }
     if (event.code === "KeyR" && finished) {
       event.preventDefault();
       resetRun();
@@ -1969,6 +2116,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   buyShieldButton?.addEventListener("click", () => buyItem("shield"));
   buyScytheButton?.addEventListener("click", () => buyItem("scythe"));
   buyBowButton?.addEventListener("click", () => buyItem("bow"));
+  buyTorchButton?.addEventListener("click", () => buyItem("torch"));
+  buyCloakButton?.addEventListener("click", () => buyItem("cloak"));
+  trueSightButton?.addEventListener("click", () => useTrueSight());
   closeShopButton?.addEventListener("click", () => setShopOpen(false));
   resumeButton?.addEventListener("click", () => setPaused(false));
   restartButton?.addEventListener("click", () => resetRun());
@@ -1985,6 +2135,11 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     const delta = Math.min(scene.getEngine().getDeltaTime() / 1000, 0.05);
     elapsed += delta;
     attackCooldown = Math.max(0, attackCooldown - delta);
+    if (!finished && gameStarted && !paused && !isFirstLevel()) {
+      if (!nightMode && elapsed >= nextNightAt) beginNightMode();
+      if (nightMode && elapsed >= nightUntil) endNightMode();
+    }
+    if (elapsed >= trueSightUntil) setWallVision(false);
     skybox.rotation.y += delta * 0.006;
     altar.rotation.y += delta * 0.25;
     altarLight.intensity = 0.72 + Math.sin(elapsed * 4) * 0.16;
@@ -2061,7 +2216,12 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     camera.rotation.z = Math.sin(elapsed * 1.2) * 0.0025;
     playerLight.position = camera.position.add(new Vector3(0, -0.05, 0));
     const basePlayerLight = isForestLevel() ? 0.82 : isDesertLevel() ? 0.98 : 1.12;
-    playerLight.intensity = basePlayerLight + Math.sin(elapsed * 9) * 0.05;
+    const nightLightBonus = nightMode ? (hasTorch ? 0.45 : -0.78) : 0;
+    playerLight.intensity = Math.max(0.18, basePlayerLight + nightLightBonus + Math.sin(elapsed * 9) * 0.05);
+    playerLight.range = nightMode ? (hasTorch ? 4.2 : 1.45) : isForestLevel() ? 4.1 : isDesertLevel() ? 5.0 : 4.7;
+    ambient.intensity = nightMode ? (hasTorch ? 0.1 : 0.04) : isForestLevel() ? 0.27 : isDesertLevel() ? 0.36 : 0.42;
+    moon.intensity = nightMode ? (hasTorch ? 0.08 : 0.035) : isForestLevel() ? 0.33 : isDesertLevel() ? 0.55 : 0.48;
+    scene.fogDensity = nightMode ? currentLevel.fogDensity + (hasTorch ? 0.028 : 0.055) : currentLevel.fogDensity;
     updateHeldScytheModel();
     updateHeldBowModel();
 
@@ -2171,7 +2331,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       delta,
       elapsed,
       canMoveTo,
-      !finished && gameStarted && !shopOpen && !paused,
+      !finished && gameStarted && !shopOpen && !paused && elapsed >= invisibilityUntil,
       damagePlayer
     );
     const closestThreat = enemyUpdate.closestKind;

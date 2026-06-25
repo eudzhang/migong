@@ -12,7 +12,9 @@ export const GAME_BALANCE = {
   shop: {
     shieldCost: 4,
     scytheCost: 3,
-    bowCost: 6
+    bowCost: 6,
+    torchCost: 5,
+    cloakCost: 8
   },
   combat: {
     scytheRange: 4.8,
