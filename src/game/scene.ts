@@ -91,6 +91,40 @@ const LEVELS: LevelDefinition[] = [
     fogColor: new Color3(0.045, 0.105, 0.1),
     groundName: "forest-floor",
     wallName: "ancient-tree-wall"
+  },
+  {
+    id: "desert-city",
+    name: "第三关 沙漠之城",
+    subtitle: "收集 5 个太阳符文，穿过机关古城。",
+    maze: [
+      "#########################",
+      "#S..#.....#.......#....K#",
+      "###.#.###.#.#####.#.###.#",
+      "#...#...#...#...#...#...#",
+      "#.#####.#####.#.#####.#.#",
+      "#.....#.....#.#.....#.#.#",
+      "#.###.#.###.#.###.#.#.#.#",
+      "#.#K#.#...#.....#.#...#.#",
+      "#.#.#.###.#######.#####.#",
+      "#...#.....#.....#.....#.#",
+      "#.#######.#.###.#####.#.#",
+      "#.....#...#.#K#.....#...#",
+      "###.#.#.###.#.#####.###.#",
+      "#...#.#.....#.....#.....#",
+      "#.###.###########.#####.#",
+      "#.#...#.....K...#.....#.#",
+      "#.#.###.#####.#.#####.#.#",
+      "#...#...#.....#.....#...#",
+      "#.###.#.#.#########.###.#",
+      "#.....#.#.....#...#...K.#",
+      "#.#####.#####.#.#.#####.#",
+      "#.............#.#.....E.#",
+      "#########################"
+    ],
+    fogDensity: 0.038,
+    fogColor: new Color3(0.27, 0.2, 0.12),
+    groundName: "wind-sand",
+    wallName: "sunstone-wall"
   }
 ];
 
@@ -120,6 +154,14 @@ let dynamicBlockedCells = new Set<string>();
 let dynamicOpenCells = new Set<string>();
 
 type Cell = { row: number; col: number };
+
+function isForestLevel(): boolean {
+  return currentLevel.id === "mist-forest";
+}
+
+function isDesertLevel(): boolean {
+  return currentLevel.id === "desert-city";
+}
 
 function cellKey(cell: Cell): string {
   return `${cell.row}:${cell.col}`;
@@ -504,27 +546,31 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   });
 
   const ambient = new HemisphericLight("ambient", new Vector3(0, 1, 0), scene);
-  ambient.intensity = currentLevelIndex === 1 ? 0.27 : 0.42;
-  ambient.groundColor = currentLevelIndex === 1 ? new Color3(0.04, 0.07, 0.06) : new Color3(0.1, 0.09, 0.09);
+  ambient.intensity = isForestLevel() ? 0.27 : isDesertLevel() ? 0.36 : 0.42;
+  ambient.groundColor = isForestLevel() ? new Color3(0.04, 0.07, 0.06) : isDesertLevel() ? new Color3(0.22, 0.13, 0.06) : new Color3(0.1, 0.09, 0.09);
 
   const moon = new DirectionalLight("moon", new Vector3(-0.45, -1, 0.45), scene);
-  moon.intensity = currentLevelIndex === 1 ? 0.33 : 0.48;
+  moon.intensity = isForestLevel() ? 0.33 : isDesertLevel() ? 0.55 : 0.48;
 
   const grassMat = makePixelMaterial(
     scene,
     currentLevel.groundName,
-    currentLevelIndex === 1 ? new Color3(0.16, 0.33, 0.2) : new Color3(0.22, 0.38, 0.24),
-    currentLevelIndex === 1
+    isForestLevel() ? new Color3(0.16, 0.33, 0.2) : isDesertLevel() ? new Color3(0.55, 0.38, 0.18) : new Color3(0.22, 0.38, 0.24),
+    isForestLevel()
       ? noisePainter("#245b2d", ["#1b4727", "#34713a", "#5a7d3c", "#1b3026", "#5a442d"])
+      : isDesertLevel()
+        ? noisePainter("#9d7231", ["#c89745", "#735020", "#d9b86c", "#5c3718", "#e7c47a"])
       : noisePainter("#2f7131", ["#3e8d3b", "#266025", "#68a34d", "#1f4d24", "#7b5b31"]),
     { uScale: 12, vScale: 10 }
   );
   const stoneMat = makePixelMaterial(
     scene,
     currentLevel.wallName,
-    currentLevelIndex === 1 ? new Color3(0.27, 0.22, 0.16) : new Color3(0.45, 0.47, 0.48),
-    currentLevelIndex === 1
+    isForestLevel() ? new Color3(0.27, 0.22, 0.16) : isDesertLevel() ? new Color3(0.68, 0.49, 0.25) : new Color3(0.45, 0.47, 0.48),
+    isForestLevel()
       ? noisePainter("#4b3423", ["#5e432d", "#2f241a", "#684f31", "#203922", "#6e6a42"], "#1b261b")
+      : isDesertLevel()
+        ? noisePainter("#b27d36", ["#d9a95c", "#7f5724", "#e6c076", "#5a3618"], "#5b3518")
       : noisePainter("#777b7b", ["#8b8f8f", "#676b6d", "#55595c", "#9da0a0"], "#4d5357"),
     { uScale: 1.2, vScale: 2.6 }
   );
@@ -556,6 +602,21 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     noisePainter("#2aa7ff", ["#8bdcff", "#106ec9", "#d8f7ff"]),
     { emissive: new Color3(0.02, 0.5, 1) }
   );
+  const sunRuneMat = makePixelMaterial(
+    scene,
+    "sun-rune",
+    new Color3(1, 0.72, 0.16),
+    noisePainter("#ffb72c", ["#fff0a6", "#c76912", "#f6d063", "#8f4312"]),
+    { emissive: new Color3(0.85, 0.35, 0.03) }
+  );
+  const quicksandMat = makePixelMaterial(
+    scene,
+    "quicksand",
+    new Color3(0.55, 0.36, 0.16),
+    noisePainter("#8c6328", ["#c49344", "#5e3a16", "#d9b866", "#6f4a20"]),
+    { emissive: new Color3(0.08, 0.04, 0.01) }
+  );
+  const spikeMat = makePixelMaterial(scene, "bronze-spike", new Color3(0.65, 0.44, 0.18), noisePainter("#9c6727", ["#d99a45", "#5b3517", "#f0be66"]));
   const exitMat = makePixelMaterial(
     scene,
     "gold-exit",
@@ -611,9 +672,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     { emissive: new Color3(0.16, 0.2, 0.22) }
   );
   const fogRibbonMat = new StandardMaterial("forest-fog-ribbon", scene);
-  fogRibbonMat.diffuseColor = currentLevelIndex === 1 ? new Color3(0.35, 0.62, 0.58) : new Color3(0.42, 0.46, 0.5);
-  fogRibbonMat.emissiveColor = currentLevelIndex === 1 ? new Color3(0.04, 0.11, 0.1) : new Color3(0.03, 0.04, 0.05);
-  fogRibbonMat.alpha = currentLevelIndex === 1 ? 0.48 : 0.22;
+  fogRibbonMat.diffuseColor = isForestLevel() ? new Color3(0.35, 0.62, 0.58) : isDesertLevel() ? new Color3(0.86, 0.64, 0.32) : new Color3(0.42, 0.46, 0.5);
+  fogRibbonMat.emissiveColor = isForestLevel() ? new Color3(0.04, 0.11, 0.1) : isDesertLevel() ? new Color3(0.12, 0.07, 0.02) : new Color3(0.03, 0.04, 0.05);
+  fogRibbonMat.alpha = isForestLevel() ? 0.48 : isDesertLevel() ? 0.34 : 0.22;
 
   const brideMat = makePixelMaterial(scene, "bride-white", new Color3(0.86, 0.86, 0.8), clothPainter("#dedbd1", "#b5b5ae", "#f8f3e2"), {
     emissive: new Color3(0.08, 0.08, 0.11)
@@ -748,7 +809,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   blockMoon.rotation.y = -0.5;
 
   const mistBlocks: Mesh[] = [];
-  const mistCount = currentLevelIndex === 1 ? 48 : 14;
+  const mistCount = isForestLevel() ? 48 : isDesertLevel() ? 30 : 14;
   for (let i = 0; i < mistCount; i += 1) {
     const cell = allOpenCells[(i * 11 + 7) % allOpenCells.length];
     const mist = addBlock(
@@ -759,7 +820,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       fogRibbonMat
     );
     mist.rotation.y = (i % 5) * 0.22;
-    mist.visibility = currentLevelIndex === 1 ? 0.62 : 0.45;
+    mist.visibility = isForestLevel() ? 0.62 : isDesertLevel() ? 0.5 : 0.45;
     mistBlocks.push(mist);
   }
 
@@ -775,8 +836,20 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     used: boolean;
     cooldownUntil: number;
   };
+  type QuicksandTrap = {
+    root: Mesh;
+    cell: Cell;
+  };
+  type SpikeTrap = {
+    root: Mesh;
+    cell: Cell;
+    phase: number;
+    cooldownUntil: number;
+  };
   const livingTrees: LivingTree[] = [];
   const pressurePlates: PressurePlate[] = [];
+  const quicksandTraps: QuicksandTrap[] = [];
+  const spikeTraps: SpikeTrap[] = [];
   const forestWallRoots = new Map<string, Mesh>();
 
   function chooseLivingTreeCell(used = new Set<string>()): Cell {
@@ -836,8 +909,39 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     return { root, cell, used: false, cooldownUntil: 0 };
   }
 
-  if (currentLevelIndex === 1) {
+  function createQuicksandTrap(cell: Cell, index: number): QuicksandTrap {
+    const root = new Mesh(`quicksand-trap-${index}`, scene);
+    root.position = worldFromCell(cell).add(new Vector3(0, 0.032, 0));
+    addBlock(scene, "quicksand-pool", { width: TILE * 0.82, height: 0.035, depth: TILE * 0.82 }, new Vector3(0, 0, 0), quicksandMat, root);
+    addBlock(scene, "quicksand-swirl-a", { width: TILE * 0.52, height: 0.02, depth: 0.08 }, new Vector3(0, 0.032, 0), dirtMat, root).rotation.y = 0.42;
+    addBlock(scene, "quicksand-swirl-b", { width: TILE * 0.34, height: 0.02, depth: 0.07 }, new Vector3(0, 0.04, 0), dirtMat, root).rotation.y = -0.48;
+    return { root, cell };
+  }
+
+  function createSpikeTrap(cell: Cell, index: number): SpikeTrap {
+    const root = new Mesh(`spike-trap-${index}`, scene);
+    root.position = worldFromCell(cell).add(new Vector3(0, 0.04, 0));
+    addBlock(scene, "spike-base", { width: TILE * 0.72, height: 0.04, depth: TILE * 0.72 }, new Vector3(0, 0, 0), darkStoneMat, root);
+    [-0.22, 0, 0.22].forEach((x) => {
+      [-0.18, 0.18].forEach((z) => {
+        addBlock(scene, "spike-tooth", { width: 0.1, height: 0.36, depth: 0.1 }, new Vector3(x, 0.12, z), spikeMat, root);
+      });
+    });
+    return { root, cell, phase: index * 0.75, cooldownUntil: 0 };
+  }
+
+  if (isForestLevel() || isDesertLevel()) {
     choosePressurePlateCells().forEach((cell, index) => pressurePlates.push(createPressurePlate(cell, index)));
+  }
+
+  if (isDesertLevel()) {
+    allOpenCells.forEach((cell, index) => {
+      const tile = currentMaze[cell.row][cell.col];
+      const pos = worldFromCell(cell);
+      if (tile !== "." || Vector3.Distance(pos, start) < 4 || Vector3.Distance(pos, worldFromCell(findCell("E"))) < 3) return;
+      if (index % 17 === 6 && quicksandTraps.length < 9) quicksandTraps.push(createQuicksandTrap(cell, quicksandTraps.length));
+      else if (index % 19 === 9 && spikeTraps.length < 8) spikeTraps.push(createSpikeTrap(cell, spikeTraps.length));
+    });
   }
 
   for (let row = 0; row < currentMaze.length; row += 1) {
@@ -846,7 +950,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       const pos = worldFromCell({ row, col });
 
       if (tile === "#") {
-        if (currentLevelIndex === 1) {
+        if (isForestLevel()) {
           const root = new Mesh("forest-wall-root", scene);
           root.position = pos.clone();
           forestWallRoots.set(cellKey({ row, col }), root);
@@ -864,6 +968,24 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
           addBlock(scene, "forest-wall-cap", { width: TILE * 1.04, height: 0.34, depth: TILE * 1.04 }, new Vector3(0, 1.64, 0), canopyMat, wall);
           if ((row + col) % 3 === 0) {
             addBlock(scene, "forest-wall-stone-chip", { width: 0.28, height: 0.18, depth: 0.06 }, new Vector3(0.22, 0.2, -TILE * 0.55), darkStoneMat, wall);
+          }
+        } else if (isDesertLevel()) {
+          const root = new Mesh("desert-wall-root", scene);
+          root.position = pos.clone();
+          forestWallRoots.set(cellKey({ row, col }), root);
+          const wall = addBlock(
+            scene,
+            "sunstone-wall-block",
+            { width: TILE, height: 2.65, depth: TILE },
+            new Vector3(0, 1.32, 0),
+            stoneMat,
+            root
+          );
+          addBlock(scene, "sunstone-band-low", { width: TILE * 0.96, height: 0.1, depth: TILE * 0.96 }, new Vector3(0, -0.48, 0), darkStoneMat, wall);
+          addBlock(scene, "sunstone-band-high", { width: TILE * 0.96, height: 0.1, depth: TILE * 0.96 }, new Vector3(0, 0.48, 0), darkStoneMat, wall);
+          addBlock(scene, "sunstone-glyph", { width: 0.34, height: 0.34, depth: 0.055 }, new Vector3(0, 0.18, -TILE * 0.52), sunRuneMat, wall);
+          if ((row + col) % 4 === 0) {
+            addBlock(scene, "sunstone-broken-cap", { width: TILE * 0.7, height: 0.22, depth: TILE * 0.68 }, new Vector3(0.08, 1.46, -0.05), stoneMat, wall);
           }
         } else {
           const wall = addBlock(
@@ -892,15 +1014,27 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
           const stem = addBlock(scene, "mushroom-stem", { width: 0.08, height: 0.16, depth: 0.08 }, pos.add(new Vector3(0.28, 0.1, 0.24)), skinMat);
           addBlock(scene, "mushroom-cap", { width: 0.2, height: 0.1, depth: 0.2 }, stem.position.add(new Vector3(0, 0.13, 0)), mushroomMat);
         }
-        if (currentLevelIndex === 1 && (row * 11 + col * 7) % 23 === 0) {
+        if (isForestLevel() && (row * 11 + col * 7) % 23 === 0) {
           const trunk = addBlock(scene, "forest-trunk", { width: 0.22, height: 1.55, depth: 0.22 }, pos.add(new Vector3(-0.34, 0.78, 0.32)), barkMat);
           addBlock(scene, "forest-canopy-low", { width: 0.82, height: 0.32, depth: 0.78 }, trunk.position.add(new Vector3(0, 0.98, 0)), canopyMat);
           addBlock(scene, "forest-canopy-high", { width: 0.58, height: 0.26, depth: 0.55 }, trunk.position.add(new Vector3(0.08, 1.22, -0.04)), canopyMat);
         }
-        if (currentLevelIndex === 1 && (row * 17 + col * 13) % 29 === 0) {
+        if (isForestLevel() && (row * 17 + col * 13) % 29 === 0) {
           addBlock(scene, "hanging-vine", { width: 0.06, height: 0.92, depth: 0.06 }, pos.add(new Vector3(0.42, 1.55, -0.34)), leafMat);
           const spore = addBlock(scene, "forest-spore", { width: 0.08, height: 0.08, depth: 0.08 }, pos.add(new Vector3(-0.18, 0.72, -0.28)), crystalMat);
           spore.metadata = { pulse: true };
+        }
+        if (isDesertLevel() && (row * 11 + col * 5) % 19 === 0) {
+          const jar = addBlock(scene, "desert-jar", { width: 0.28, height: 0.38, depth: 0.28 }, pos.add(new Vector3(-0.32, 0.22, 0.28)), dirtMat);
+          addBlock(scene, "desert-jar-neck", { width: 0.16, height: 0.12, depth: 0.16 }, jar.position.add(new Vector3(0, 0.24, 0)), dirtMat);
+        }
+        if (isDesertLevel() && (row * 7 + col * 13) % 31 === 0) {
+          addBlock(scene, "sandstone-obelisk", { width: 0.24, height: 1.45, depth: 0.24 }, pos.add(new Vector3(0.36, 0.74, -0.3)), stoneMat);
+          addBlock(scene, "obelisk-glow", { width: 0.16, height: 0.16, depth: 0.045 }, pos.add(new Vector3(0.36, 1.08, -0.43)), sunRuneMat);
+        }
+        if (isDesertLevel() && (row * 17 + col * 3) % 37 === 0) {
+          const pole = addBlock(scene, "desert-banner-pole", { width: 0.07, height: 1.1, depth: 0.07 }, pos.add(new Vector3(-0.36, 0.58, -0.34)), darkStoneMat);
+          addBlock(scene, "desert-torn-cloth", { width: 0.42, height: 0.58, depth: 0.045 }, pole.position.add(new Vector3(0.22, 0.06, 0)), bannerMat);
         }
         if ((row + col * 9) % 17 === 0) {
           addBlock(scene, "loose-stone", { width: 0.18, height: 0.1, depth: 0.16 }, pos.add(new Vector3(-0.32, 0.07, -0.28)), darkStoneMat);
@@ -973,7 +1107,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   });
 
   const forestWisps: Mesh[] = [];
-  if (currentLevelIndex === 1) {
+  if (isForestLevel()) {
     allOpenCells.forEach((cell, index) => {
       const tile = currentMaze[cell.row][cell.col];
       if (tile !== "." || index % 23 !== 5 || forestWisps.length >= 10) return;
@@ -999,8 +1133,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
 
   const playerLight = new PointLight("lantern", player.position.clone(), scene);
   playerLight.diffuse = new Color3(1, 0.72, 0.38);
-  playerLight.intensity = currentLevelIndex === 1 ? 0.95 : 1.22;
-  playerLight.range = currentLevelIndex === 1 ? 4.1 : 4.7;
+  playerLight.intensity = isForestLevel() ? 0.95 : isDesertLevel() ? 1.08 : 1.22;
+  playerLight.range = isForestLevel() ? 4.1 : isDesertLevel() ? 5.0 : 4.7;
 
   const keys: Mesh[] = [];
   currentMaze.forEach((line, row) => {
@@ -1010,12 +1144,12 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       const key = CreateCylinder("blue-rune", { height: 0.12, diameter: 0.55, tessellation: 4 }, scene);
       key.position = pos.add(new Vector3(0, 1.0, 0));
       key.rotation.x = Math.PI * 0.5;
-      key.material = keyMat;
+      key.material = isDesertLevel() ? sunRuneMat : keyMat;
       keys.push(key);
 
       const light = new PointLight("rune-light", key.position, scene);
-      light.diffuse = new Color3(0.15, 0.65, 1);
-      light.intensity = 1.0;
+      light.diffuse = isDesertLevel() ? new Color3(1, 0.55, 0.08) : new Color3(0.15, 0.65, 1);
+      light.intensity = isDesertLevel() ? 1.16 : 1.0;
       light.range = 4.5;
     });
   });
@@ -1111,7 +1245,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let enemyPressureBonus = 0;
 
   function levelEnemyMax(): number {
-    return currentLevelIndex === 1 ? GAME_BALANCE.enemies.maxAlive + 7 + enemyPressureBonus : GAME_BALANCE.enemies.maxAlive;
+    if (isForestLevel()) return GAME_BALANCE.enemies.maxAlive + 7 + enemyPressureBonus;
+    if (isDesertLevel()) return GAME_BALANCE.enemies.maxAlive + 6;
+    return GAME_BALANCE.enemies.maxAlive;
   }
 
   function pickSpawnCell(): Cell {
@@ -1121,15 +1257,25 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
 
   function spawnNpc(kind?: NpcKind): void {
     if (enemies.length >= levelEnemyMax()) return;
-    const kinds = currentLevelIndex === 1
+    const kinds = isForestLevel()
       ? [...GAME_BALANCE.enemies.initialKinds, "蝙蝠群", "蝙蝠群", "森林守卫"] as readonly NpcKind[]
-      : GAME_BALANCE.enemies.initialKinds as readonly NpcKind[];
+      : isDesertLevel()
+        ? ["骷髅兵", "骷髅兵", "毒蝎", "毒蝎", "老婆婆"] as readonly NpcKind[]
+        : GAME_BALANCE.enemies.initialKinds as readonly NpcKind[];
     const chosen = kind ?? kinds[Math.floor(Math.random() * kinds.length)];
     enemies.push(createNpc(scene, chosen, worldFromCell(pickSpawnCell()).add(new Vector3(0, 0.02, 0)), npcMaterials));
   }
 
-  GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
-  if (currentLevelIndex === 1) {
+  if (isDesertLevel()) {
+    spawnNpc("骷髅兵");
+    spawnNpc("骷髅兵");
+    spawnNpc("毒蝎");
+    spawnNpc("毒蝎");
+    spawnNpc("骷髅兵");
+  } else {
+    GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
+  }
+  if (isForestLevel()) {
     spawnNpc("僵尸");
     spawnNpc("鬼新娘");
     spawnNpc("老婆婆");
@@ -1184,7 +1330,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let shopOpen = false;
   let paused = false;
   let elapsed = 0;
-  let spawnTimer: number = currentLevelIndex === 1 ? 8 : GAME_BALANCE.enemies.initialSpawnSeconds;
+  let spawnTimer: number = isForestLevel() ? 8 : isDesertLevel() ? 10 : GAME_BALANCE.enemies.initialSpawnSeconds;
   let attackCooldown = 0;
   let selectedWeapon: "scythe" | "bow" | null = null;
   let heldOverride: "shield" | "scythe" | "bow" | null = null;
@@ -1416,6 +1562,30 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     if (action === "attack" && impact) playSlashEffect(impact);
   }
 
+  function damageTrap(source: string): void {
+    if (finished || invulnerable > 0 || elapsed < safeUntil) return;
+    if (shields > 0) {
+      shields -= 1;
+      invulnerable = GAME_BALANCE.player.blockInvulnerableSeconds;
+      playHeldAction("shield", "defend");
+      showCombatToast(`护盾挡住${source}`, "good");
+      updateHud();
+      return;
+    }
+    lives -= 1;
+    invulnerable = GAME_BALANCE.player.hitInvulnerableSeconds;
+    damageFlash?.classList.remove("hit");
+    damageFlash?.offsetHeight;
+    damageFlash?.classList.add("hit");
+    showCombatToast(`${source}造成伤害`, "danger");
+    updateHud();
+    if (lives <= 0) {
+      finished = true;
+      showMessage(`你倒在了${currentLevel.name}的机关中。按 R 重新开始。`);
+      updateHud();
+    }
+  }
+
   function damagePlayer(source: NpcKind): void {
     if (finished || invulnerable > 0 || elapsed < safeUntil) return;
     if (shields > 0) {
@@ -1600,8 +1770,16 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     crystals.forEach((crystal) => crystal.setEnabled(true));
     ginsengs.forEach((ginseng) => ginseng.setEnabled(true));
     enemies.splice(0).forEach(disposeEnemy);
-    GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
-    if (currentLevelIndex === 1) {
+    if (isDesertLevel()) {
+      spawnNpc("骷髅兵");
+      spawnNpc("骷髅兵");
+      spawnNpc("毒蝎");
+      spawnNpc("毒蝎");
+      spawnNpc("骷髅兵");
+    } else {
+      GAME_BALANCE.enemies.initialKinds.forEach((kind) => spawnNpc(kind));
+    }
+    if (isForestLevel()) {
       spawnNpc("僵尸");
       spawnNpc("鬼新娘");
       spawnNpc("老婆婆");
@@ -1609,7 +1787,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       spawnNpc("蝙蝠群");
       spawnNpc("森林守卫");
     }
-    if (currentLevelIndex === 1) {
+    if (isForestLevel()) {
       const used = new Set<string>();
       livingTrees.forEach((tree) => {
         const cell = chooseLivingTreeCell(used);
@@ -1620,13 +1798,22 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
         tree.nextShiftAt = Number.POSITIVE_INFINITY;
         dynamicBlockedCells.add(cellKey(cell));
       });
-      pressurePlates.forEach((plate) => {
-        plate.used = false;
-        plate.cooldownUntil = 0;
-        plate.root.scaling.set(1, 1, 1);
-        plate.root.setEnabled(true);
-      });
     }
+    pressurePlates.forEach((plate) => {
+      plate.used = false;
+      plate.cooldownUntil = 0;
+      plate.root.scaling.set(1, 1, 1);
+      plate.root.setEnabled(true);
+    });
+    spikeTraps.forEach((trap) => {
+      trap.cooldownUntil = 0;
+      trap.root.position.y = 0.04;
+      trap.root.setEnabled(true);
+    });
+    quicksandTraps.forEach((trap) => {
+      trap.root.scaling.set(1, 1, 1);
+      trap.root.setEnabled(true);
+    });
     collected = 0;
     crystalCount = 0;
     hasScythe = false;
@@ -1637,7 +1824,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     lives = GAME_BALANCE.player.lives;
     invulnerable = 0;
     attackCooldown = 0;
-    spawnTimer = currentLevelIndex === 1 ? 8 : GAME_BALANCE.enemies.initialSpawnSeconds;
+    spawnTimer = isForestLevel() ? 8 : isDesertLevel() ? 10 : GAME_BALANCE.enemies.initialSpawnSeconds;
     finished = false;
     paused = false;
     shopOpen = false;
@@ -1693,7 +1880,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       }, 1100);
       return;
     }
-    showMessage("你穿过迷雾森林，Demo 关卡已完成。按 R 重新挑战本关。", true);
+    showMessage(`你穿过了${currentLevel.name}，Demo 关卡已完成。按 R 重新挑战本关。`, true);
   }
 
   const onActionKeyDown = (event: KeyboardEvent): void => {
@@ -1765,7 +1952,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     altarLight.intensity = 0.72 + Math.sin(elapsed * 4) * 0.16;
     mistBlocks.forEach((mist, index) => {
       mist.position.x += Math.sin(elapsed * 0.7 + index) * delta * 0.04;
-      mist.visibility = (currentLevelIndex === 1 ? 0.66 : 0.34) + Math.sin(elapsed * 1.3 + index) * 0.08;
+      const baseMistVisibility = isForestLevel() ? 0.66 : isDesertLevel() ? 0.5 : 0.34;
+      mist.visibility = baseMistVisibility + Math.sin(elapsed * 1.3 + index) * 0.08;
     });
     forestWisps.forEach((wisp, index) => {
       const phase = (wisp.metadata?.phase as number | undefined) ?? index;
@@ -1778,14 +1966,14 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       }
     });
     livingTrees.forEach((tree, index) => {
-      if (currentLevelIndex !== 1 && !finished && gameStarted && !shopOpen && !paused && elapsed >= tree.nextShiftAt) shiftLivingTree(tree);
+      if (isForestLevel() && !finished && gameStarted && !shopOpen && !paused && elapsed >= tree.nextShiftAt) shiftLivingTree(tree);
       tree.root.position = Vector3.Lerp(tree.root.position, tree.target, 0.025);
       tree.root.rotation.y = Math.sin(elapsed * 0.7 + index) * 0.08;
       tree.root.scaling.y = 1 + Math.sin(elapsed * 1.8 + index) * 0.025;
     });
 
     if (!finished && gameStarted && !shopOpen && !paused) {
-      if (currentLevelIndex === 1) {
+      if (isForestLevel()) {
         const nextPressureBonus = Math.min(8, Math.floor(Math.max(0, elapsed - 25) / 35));
         if (nextPressureBonus > enemyPressureBonus) {
           enemyPressureBonus = nextPressureBonus;
@@ -1805,7 +1993,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
         movement.normalize();
         const forward = new Vector3(Math.sin(yaw), 0, Math.cos(yaw));
         const right = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-        const step = forward.scale(movement.z).add(right.scale(movement.x)).scaleInPlace(delta * GAME_BALANCE.player.moveSpeed);
+        const inQuicksand = quicksandTraps.some((trap) => trap.root.isEnabled() && Vector3.Distance(trap.root.position, player.position) < 0.62);
+        const trapSpeedMultiplier = inQuicksand ? 0.48 : 1;
+        const step = forward.scale(movement.z).add(right.scale(movement.x)).scaleInPlace(delta * GAME_BALANCE.player.moveSpeed * trapSpeedMultiplier);
         const nextX = player.position.add(new Vector3(step.x, 0, 0));
         const nextZ = player.position.add(new Vector3(0, 0, step.z));
         if (canMoveTo(nextX)) player.position.x = nextX.x;
@@ -1815,9 +2005,9 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
       spawnTimer -= delta;
       if (spawnTimer <= 0) {
         spawnNpc();
-        const levelMinSpawnSeconds = currentLevelIndex === 1 ? 5.5 : GAME_BALANCE.enemies.minSpawnSeconds;
-        const levelBaseSpawnSeconds = currentLevelIndex === 1 ? Math.max(7.5, 12 - enemyPressureBonus * 0.65) : GAME_BALANCE.enemies.baseSpawnSeconds;
-        const levelSpawnRamp = currentLevelIndex === 1 ? 0.04 : GAME_BALANCE.enemies.spawnRampPerSecond;
+        const levelMinSpawnSeconds = isForestLevel() ? 5.5 : isDesertLevel() ? 6.5 : GAME_BALANCE.enemies.minSpawnSeconds;
+        const levelBaseSpawnSeconds = isForestLevel() ? Math.max(7.5, 12 - enemyPressureBonus * 0.65) : isDesertLevel() ? 13 : GAME_BALANCE.enemies.baseSpawnSeconds;
+        const levelSpawnRamp = isForestLevel() ? 0.04 : isDesertLevel() ? 0.02 : GAME_BALANCE.enemies.spawnRampPerSecond;
         spawnTimer = Math.max(
           levelMinSpawnSeconds,
           levelBaseSpawnSeconds - elapsed * levelSpawnRamp
@@ -1832,7 +2022,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     camera.rotation.y = yaw;
     camera.rotation.z = Math.sin(elapsed * 1.2) * 0.0025;
     playerLight.position = camera.position.add(new Vector3(0, -0.05, 0));
-    playerLight.intensity = (currentLevelIndex === 1 ? 0.82 : 1.12) + Math.sin(elapsed * 9) * 0.05;
+    const basePlayerLight = isForestLevel() ? 0.82 : isDesertLevel() ? 0.98 : 1.12;
+    playerLight.intensity = basePlayerLight + Math.sin(elapsed * 9) * 0.05;
     updateHeldScytheModel();
     updateHeldBowModel();
 
@@ -1895,10 +2086,37 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
         !finished &&
         !shopOpen &&
         !paused &&
-        currentLevelIndex === 1 &&
+        (isForestLevel() || isDesertLevel()) &&
         Vector3.Distance(plate.root.position, player.position) < 0.58
       ) {
         triggerPressurePlate(plate);
+      }
+    });
+
+    quicksandTraps.forEach((trap, index) => {
+      if (!trap.root.isEnabled()) return;
+      trap.root.rotation.y += delta * (0.18 + index * 0.006);
+      trap.root.scaling.x = 1 + Math.sin(elapsed * 1.7 + index) * 0.035;
+      trap.root.scaling.z = 1 + Math.cos(elapsed * 1.5 + index) * 0.035;
+    });
+
+    spikeTraps.forEach((trap, index) => {
+      if (!trap.root.isEnabled()) return;
+      const pulse = (Math.sin(elapsed * 3.1 + trap.phase) + 1) * 0.5;
+      const armed = pulse > 0.62;
+      trap.root.position.y = armed ? 0.02 + pulse * 0.16 : -0.06 + pulse * 0.05;
+      trap.root.rotation.y = Math.sin(elapsed * 0.35 + index) * 0.03;
+      if (
+        armed &&
+        gameStarted &&
+        !finished &&
+        !shopOpen &&
+        !paused &&
+        elapsed >= trap.cooldownUntil &&
+        Vector3.Distance(trap.root.position, player.position) < 0.62
+      ) {
+        trap.cooldownUntil = elapsed + 1.25;
+        damageTrap("尖刺机关");
       }
     });
 

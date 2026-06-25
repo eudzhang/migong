@@ -1,6 +1,6 @@
 import { Color3, CreateBox, Mesh, PointLight, Scene, StandardMaterial, Vector3 } from "../app/babylon";
 
-export type NpcKind = "鬼新娘" | "僵尸" | "老婆婆" | "森林守卫" | "蝙蝠群";
+export type NpcKind = "鬼新娘" | "僵尸" | "老婆婆" | "森林守卫" | "蝙蝠群" | "骷髅兵" | "毒蝎";
 
 export type Enemy = {
   kind: NpcKind;
@@ -57,6 +57,18 @@ const ENEMY_BEHAVIOR: Record<NpcKind, EnemyBehaviorProfile> = {
     attackDistance: 0.62,
     attackCooldown: 1.15,
     speedMultiplier: 1.55
+  },
+  "骷髅兵": {
+    alertDistance: 8.8,
+    attackDistance: 0.58,
+    attackCooldown: 1.95,
+    speedMultiplier: 1.02
+  },
+  "毒蝎": {
+    alertDistance: 9.6,
+    attackDistance: 0.46,
+    attackCooldown: 1.35,
+    speedMultiplier: 1.6
   }
 };
 
@@ -184,6 +196,30 @@ export function createNpc(scene: Scene, kind: NpcKind, position: Vector3, materi
       addPart(`bat-eye-l-${index}`, { width: 0.035, height: 0.035, depth: 0.025 }, new Vector3(x - 0.035, y + 0.09, z - 0.165), materials.eye);
       addPart(`bat-eye-r-${index}`, { width: 0.035, height: 0.035, depth: 0.025 }, new Vector3(x + 0.035, y + 0.09, z - 0.165), materials.eye);
     });
+  } else if (kind === "骷髅兵") {
+    addPart("skeleton-rib-body", { width: 0.42, height: 0.62, depth: 0.28 }, new Vector3(0, 0.66, 0), materials.bone);
+    addPart("skeleton-empty-chest", { width: 0.28, height: 0.28, depth: 0.06 }, new Vector3(0, 0.7, -0.18), materials.darkStone);
+    addPart("skeleton-skull", { width: 0.42, height: 0.38, depth: 0.42 }, new Vector3(0, 1.22, 0), materials.bone);
+    addPart("skeleton-jaw", { width: 0.28, height: 0.08, depth: 0.08 }, new Vector3(0, 1.02, -0.2), materials.bone);
+    addPart("skeleton-eye-l", { width: 0.08, height: 0.08, depth: 0.035 }, new Vector3(-0.1, 1.24, -0.22), materials.eye);
+    addPart("skeleton-eye-r", { width: 0.08, height: 0.08, depth: 0.035 }, new Vector3(0.1, 1.24, -0.22), materials.eye);
+    addPart("skeleton-arm-l", { width: 0.11, height: 0.56, depth: 0.11 }, new Vector3(-0.36, 0.7, -0.06), materials.bone, new Vector3(0.15, 0, 0.24));
+    addPart("skeleton-arm-r", { width: 0.11, height: 0.56, depth: 0.11 }, new Vector3(0.36, 0.7, -0.06), materials.bone, new Vector3(0.15, 0, -0.24));
+    addPart("skeleton-sword", { width: 0.08, height: 0.78, depth: 0.08 }, new Vector3(0.52, 0.62, -0.28), materials.steel, new Vector3(0.7, 0, -0.25));
+    addPart("skeleton-leg-l", { width: 0.12, height: 0.46, depth: 0.12 }, new Vector3(-0.14, 0.13, 0), materials.bone, new Vector3(0, 0, 0.08));
+    addPart("skeleton-leg-r", { width: 0.12, height: 0.46, depth: 0.12 }, new Vector3(0.14, 0.13, 0), materials.bone, new Vector3(0, 0, -0.08));
+  } else if (kind === "毒蝎") {
+    addPart("scorpion-body", { width: 0.46, height: 0.16, depth: 0.56 }, new Vector3(0, 0.18, 0), materials.darkStone);
+    addPart("scorpion-head", { width: 0.34, height: 0.14, depth: 0.28 }, new Vector3(0, 0.22, -0.38), materials.blackCloth);
+    addPart("scorpion-eye-l", { width: 0.055, height: 0.055, depth: 0.025 }, new Vector3(-0.08, 0.25, -0.53), materials.eye);
+    addPart("scorpion-eye-r", { width: 0.055, height: 0.055, depth: 0.025 }, new Vector3(0.08, 0.25, -0.53), materials.eye);
+    [-0.38, -0.2, 0.2, 0.38].forEach((x, index) => {
+      addPart(`scorpion-leg-l-${index}`, { width: 0.32, height: 0.06, depth: 0.07 }, new Vector3(-0.26, 0.16, x), materials.blackCloth, new Vector3(0, 0.25, -0.18));
+      addPart(`scorpion-leg-r-${index}`, { width: 0.32, height: 0.06, depth: 0.07 }, new Vector3(0.26, 0.16, x), materials.blackCloth, new Vector3(0, -0.25, 0.18));
+    });
+    addPart("scorpion-tail-a", { width: 0.1, height: 0.18, depth: 0.32 }, new Vector3(0, 0.28, 0.42), materials.blackCloth, new Vector3(-0.5, 0, 0));
+    addPart("scorpion-tail-b", { width: 0.1, height: 0.22, depth: 0.28 }, new Vector3(0, 0.52, 0.48), materials.blackCloth, new Vector3(-0.9, 0, 0));
+    addPart("scorpion-stinger", { width: 0.14, height: 0.14, depth: 0.14 }, new Vector3(0, 0.72, 0.34), materials.eye);
   } else {
     addPart("warden-root-body", { width: 0.7, height: 0.96, depth: 0.46 }, new Vector3(0, 0.72, 0), materials.bark);
     addPart("warden-bark-chest", { width: 0.46, height: 0.52, depth: 0.06 }, new Vector3(0, 0.76, -0.27), materials.darkStone);
@@ -207,17 +243,17 @@ export function createNpc(scene: Scene, kind: NpcKind, position: Vector3, materi
   if (kind === "森林守卫") root.scaling.set(1.28, 1.28, 1.28);
 
   const light = new PointLight(`${kind}-warning-light`, position.add(new Vector3(0, 1, 0)), scene);
-  light.diffuse = kind === "鬼新娘" ? new Color3(0.75, 0.8, 1) : kind === "僵尸" ? new Color3(0.2, 1, 0.25) : kind === "森林守卫" ? new Color3(0.45, 1, 0.35) : kind === "蝙蝠群" ? new Color3(0.7, 0.12, 1) : new Color3(0.8, 0.25, 1);
-  light.intensity = kind === "森林守卫" ? 0.98 : kind === "蝙蝠群" ? 0.62 : 0.55;
-  light.range = kind === "森林守卫" ? 4.4 : kind === "蝙蝠群" ? 3.2 : 2.8;
+  light.diffuse = kind === "鬼新娘" ? new Color3(0.75, 0.8, 1) : kind === "僵尸" ? new Color3(0.2, 1, 0.25) : kind === "森林守卫" ? new Color3(0.45, 1, 0.35) : kind === "蝙蝠群" ? new Color3(0.7, 0.12, 1) : kind === "毒蝎" ? new Color3(1, 0.38, 0.08) : kind === "骷髅兵" ? new Color3(1, 0.78, 0.36) : new Color3(0.8, 0.25, 1);
+  light.intensity = kind === "森林守卫" ? 0.98 : kind === "蝙蝠群" || kind === "毒蝎" ? 0.62 : 0.55;
+  light.range = kind === "森林守卫" ? 4.4 : kind === "蝙蝠群" || kind === "毒蝎" ? 3.2 : 2.8;
 
   return {
     kind,
     root,
     parts,
     light,
-    speed: kind === "僵尸" ? 1.25 : kind === "鬼新娘" ? 1.45 : kind === "森林守卫" ? 1.62 : kind === "蝙蝠群" ? 2.08 : 1.05,
-    health: kind === "森林守卫" ? 16 : 1,
+    speed: kind === "僵尸" ? 1.25 : kind === "鬼新娘" ? 1.45 : kind === "森林守卫" ? 1.62 : kind === "蝙蝠群" ? 2.08 : kind === "毒蝎" ? 2.0 : kind === "骷髅兵" ? 1.36 : 1.05,
+    health: kind === "森林守卫" ? 16 : kind === "骷髅兵" ? 2 : 1,
     attackCooldown: 0,
     rageUntil: 0,
     rageCooldown: 4 + Math.random() * 5,
