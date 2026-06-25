@@ -360,6 +360,7 @@ function makeHud(levelIndex: number): HTMLDivElement {
 
   hud.innerHTML = `
     <div id="start-screen" class="start-screen">
+      <button id="developer-hotspot" class="developer-hotspot" type="button" aria-label="开发者模式"></button>
       <div class="start-levels">
         <button id="level-select-button" class="level-select-button" type="button">关卡</button>
         <div id="level-menu" class="level-menu hidden">
@@ -1288,6 +1289,7 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   const startScreen = hud.querySelector<HTMLDivElement>("#start-screen");
   const gameUi = hud.querySelector<HTMLDivElement>("#game-ui");
   const startButton = hud.querySelector<HTMLButtonElement>("#start-button");
+  const developerHotspot = hud.querySelector<HTMLButtonElement>("#developer-hotspot");
   const levelSelectButton = hud.querySelector<HTMLButtonElement>("#level-select-button");
   const levelMenu = hud.querySelector<HTMLDivElement>("#level-menu");
   const levelOptionButtons = [...hud.querySelectorAll<HTMLButtonElement>(".level-option")];
@@ -1336,6 +1338,8 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   let heldOverride: "shield" | "scythe" | "bow" | null = null;
   let heldOverrideUntil = 0;
   let combatToastTimer = 0;
+  let developerTapCount = 0;
+  let developerTapResetTimer = 0;
   let slashEffectTimer = 0;
   let scytheSwingUntil = 0;
   let bowDrawUntil = 0;
@@ -1355,6 +1359,26 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
     void combatToast.offsetWidth;
     combatToast.classList.add("pop");
     combatToastTimer = window.setTimeout(() => combatToast.classList.add("hidden"), 720);
+  }
+
+  function refreshLevelButtons(): void {
+    const unlockedLevels = getUnlockedLevelCount();
+    levelOptionButtons.forEach((button) => {
+      const index = Number.parseInt(button.dataset.levelIndex ?? "0", 10);
+      const level = LEVELS[index];
+      const locked = index >= unlockedLevels;
+      button.disabled = locked;
+      button.classList.toggle("selected", index === currentLevelIndex);
+      const label = button.querySelector("small");
+      if (label && level) label.textContent = locked ? "未解锁" : level.subtitle;
+    });
+  }
+
+  function unlockDeveloperMode(): void {
+    setUnlockedLevelCount(LEVELS.length);
+    refreshLevelButtons();
+    levelMenu?.classList.remove("hidden");
+    showCombatToast("开发者模式：全部关卡已解锁", "good");
   }
 
   function directionToExit(): string {
@@ -1916,9 +1940,23 @@ export async function createScene(app: BabylonApp): Promise<Scene> {
   scene.onDisposeObservable.add(() => {
     window.removeEventListener("keydown", onActionKeyDown);
     window.removeEventListener("wheel", onWeaponWheel);
+    window.clearTimeout(developerTapResetTimer);
   });
 
   startButton?.addEventListener("click", () => startGame());
+  developerHotspot?.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.clearTimeout(developerTapResetTimer);
+    developerTapCount += 1;
+    if (developerTapCount >= 5) {
+      developerTapCount = 0;
+      unlockDeveloperMode();
+      return;
+    }
+    developerTapResetTimer = window.setTimeout(() => {
+      developerTapCount = 0;
+    }, 1600);
+  });
   levelSelectButton?.addEventListener("click", () => levelMenu?.classList.toggle("hidden"));
   levelOptionButtons.forEach((button) => {
     button.addEventListener("click", () => {

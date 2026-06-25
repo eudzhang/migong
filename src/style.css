@@ -44,6 +44,20 @@ body {
   justify-content: center;
 }
 
+.developer-hotspot {
+  position: absolute;
+  top: 24px;
+  right: 30px;
+  z-index: 3;
+  width: clamp(96px, 8vw, 156px);
+  height: clamp(92px, 13vh, 146px);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  opacity: 0;
+  cursor: default;
+}
+
 .start-levels {
   position: absolute;
   left: 18px;
@@ -762,6 +776,13 @@ body {
     left: 10px;
     top: 10px;
     width: min(300px, calc(100vw - 20px));
+  }
+
+  .developer-hotspot {
+    top: 16px;
+    right: 16px;
+    width: 96px;
+    height: 96px;
   }
 
   .start-button {
